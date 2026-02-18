@@ -11,7 +11,7 @@ import Constants, { ExecutionEnvironment } from 'expo-constants';
 import * as Notifications from 'expo-notifications';
 import { Platform } from 'react-native';
 import type { Reminder } from '../shared/types';
-import { NOTIFICATION_CHANNEL_ID, REMINDER_CATEGORY_ID, SNOOZE_DURATIONS_MINUTES } from '../core/constants';
+import { NOTIFICATION_CHANNEL_ID, REMINDER_CATEGORY_ID, SNOOZE_DURATIONS_MINUTES, NOTIFICATION_ACTION_MARK_DONE } from '../core/constants';
 import { buildTriggerSpecs } from './scheduleTriggerBuilder';
 import { snoozePrefixForReminder } from './snooze.service';
 
@@ -50,13 +50,18 @@ export async function requestNotificationPermissions(): Promise<boolean> {
 export async function setupReminderCategory(): Promise<void> {
   if (isNotificationsUnavailable) return;
   try {
-    const actions: Notifications.NotificationAction[] = SNOOZE_DURATIONS_MINUTES.map(
-      (mins) => ({
+    const actions: Notifications.NotificationAction[] = [
+      {
+        identifier: NOTIFICATION_ACTION_MARK_DONE,
+        buttonTitle: 'Done',
+        options: { opensAppToForeground: false },
+      },
+      ...SNOOZE_DURATIONS_MINUTES.map((mins) => ({
         identifier: `snooze_${mins}`,
         buttonTitle: `Snooze ${mins} min`,
-        options: { opensAppToForeground: false },
-      })
-    );
+        options: { opensAppToForeground: false } as const,
+      })),
+    ];
     await Notifications.setNotificationCategoryAsync(REMINDER_CATEGORY_ID, actions);
   } catch {
     // setNotificationCategoryAsync may be unavailable (e.g. web/Expo Go)

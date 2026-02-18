@@ -10,7 +10,8 @@ A React Native (Expo) reminder app built with TypeScript. Android-first, iOS-com
 - **Enable/disable** each reminder with a switch.
 - **Edit and delete** reminders.
 - **Snooze**: when a notification fires, snooze for 5 / 10 / 15 / 30 min (one-off only; future reminders unchanged). Snooze from notification actions (iOS) or in-app bar when opening from a tap (Android).
-- **Streak tracking**: mark reminders "Done"; completion history stored locally. Current and longest streak per reminder (consecutive days). Data model is sync-friendly for future analytics/cloud.
+- **Completion tracking**: store completion status per occurrence (id, reminderId, completedAt, optional source, occurrenceDate). Mark done from in-app or from notification action ("Done" button). Schema supports history and analytics; streak logic unchanged.
+- **Streak tracking**: completions drive current/longest streak per reminder (consecutive days). Data model is sync-friendly for future analytics/cloud.
 - **Themes**: light, dark, and monochrome.
 - **Ringtone**: none, system default, or pick from device files / music library; in-app preview (Play button).
 

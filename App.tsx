@@ -3,7 +3,8 @@ import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import * as Notifications from 'expo-notifications';
 import { RootNavigator } from './src/app/navigation/RootNavigator';
-import { useThemeStore, useSnoozeStore } from './src/core/store';
+import { useThemeStore, useSnoozeStore, useStreakStore } from './src/core/store';
+import { NOTIFICATION_ACTION_MARK_DONE } from './src/core/constants';
 import { scheduleSnooze, parseSnoozeMinutesFromAction } from './src/services/snooze.service';
 
 /**
@@ -27,6 +28,10 @@ export default function App() {
       const reminderId = data.reminderId;
       const title = content.title || 'Reminder';
 
+      if (actionIdentifier === NOTIFICATION_ACTION_MARK_DONE && reminderId) {
+        useStreakStore.getState().addCompletion(reminderId, 'notification');
+        return;
+      }
       const snoozeMinutes = parseSnoozeMinutesFromAction(actionIdentifier);
       if (snoozeMinutes !== null && reminderId) {
         scheduleSnooze(reminderId, title, snoozeMinutes);

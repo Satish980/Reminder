@@ -72,16 +72,29 @@ export interface LegacyReminderSchedule {
   dailyTime?: string;
 }
 
+/** Where the completion was recorded (in-app vs notification action). */
+export type CompletionSource = 'in_app' | 'notification';
+
 /**
- * A single "marked done" event for a reminder. Stored separately from reminders;
- * used for streak calculation and future analytics/sync.
- * Design: id and completedAt support dedup and conflict resolution in cloud sync.
+ * A single completion event: one "occurrence" of a reminder marked done.
+ * Stored separately from reminders; supports history, streaks, and analytics.
+ *
+ * Storage schema (sync- and analytics-friendly):
+ * - id: unique, dedup and conflict resolution in cloud sync.
+ * - reminderId: which reminder; supports per-reminder history and aggregation.
+ * - completedAt: when the user marked done (Unix ms); used for streaks and time-series.
+ * - source: where it was marked (in-app vs notification); optional for analytics.
+ * - occurrenceDate: local calendar day YYYY-MM-DD; optional, supports per-day queries and reporting.
  */
 export interface Completion {
   id: string;
   reminderId: string;
   /** Unix ms when the user marked the reminder done (used for grouping by day). */
   completedAt: number;
+  /** Where the completion was recorded. Omit for legacy records. */
+  source?: CompletionSource;
+  /** Local date YYYY-MM-DD for this occurrence; derived from completedAt if omitted. */
+  occurrenceDate?: string;
 }
 
 /** Result of streak calculation for one reminder (no scheduling logic). */
