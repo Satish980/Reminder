@@ -12,8 +12,29 @@
       "resizeMode": "contain",
       "backgroundColor": "#ffffff"
     },
+    "plugins": [
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/icon.png",
+          "color": "#2563eb"
+        }
+      ],
+      [
+        "expo-media-library",
+        {
+          "photosPermission": "Allow Reminder to access your media to choose notification sounds.",
+          "savePhotosPermission": "Allow Reminder to save media.",
+          "granularPermissions": [
+            "audio"
+          ]
+        }
+      ],
+      "expo-audio"
+    ],
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.anonymous.Reminder"
     },
     "android": {
       "adaptiveIcon": {
@@ -21,10 +42,16 @@
         "backgroundColor": "#ffffff"
       },
       "edgeToEdgeEnabled": true,
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "package": "com.anonymous.Reminder"
     },
     "web": {
       "favicon": "./assets/favicon.png"
+    },
+    "extra": {
+      "eas": {
+        "projectId": "26ecac3c-a52b-4deb-9725-4127e5db7e01"
+      }
     }
   }
 }
