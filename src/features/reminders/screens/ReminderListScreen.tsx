@@ -15,6 +15,7 @@ import {
   useThemeStore,
   useThemeColors,
   useStreakStore,
+  useCategoryStore,
 } from '../../../core/store'
 import type { ColorMode } from '../../../core/theme'
 import { ReminderCard } from '../components/ReminderCard'
@@ -31,6 +32,7 @@ export interface ReminderListScreenProps {
   onAddPress: () => void
   onEditPress: (id: string) => void
   onStatsPress?: () => void
+  onCategoriesPress?: () => void
 }
 
 const MODE_LABELS: Record<ColorMode, string> = {
@@ -43,15 +45,25 @@ export function ReminderListScreen({
   onAddPress,
   onEditPress,
   onStatsPress,
+  onCategoriesPress,
 }: ReminderListScreenProps) {
   const { reminders, hydrated, hydrate, setEnabled, removeReminder } =
     useReminderStore()
   const { mode, setMode } = useThemeStore()
+  const categories = useCategoryStore((s) => s.categories)
   const addCompletion = useStreakStore((s) => s.addCompletion)
   const clearCompletionsForReminder = useStreakStore(
     (s) => s.clearCompletionsForReminder
   )
   const colors = useThemeColors()
+  const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(
+    null
+  )
+
+  const filteredReminders = useMemo(() => {
+    if (selectedCategoryId == null) return reminders
+    return reminders.filter((r) => r.categoryId === selectedCategoryId)
+  }, [reminders, selectedCategoryId])
 
   const styles = useMemo(
     () =>
@@ -143,6 +155,27 @@ export function ReminderListScreen({
         themeOptionTextActive: {
           color: colors.primary,
         },
+        filterRow: {
+          flexDirection: 'row',
+          flexWrap: 'wrap',
+          gap: 8,
+          paddingHorizontal: 20,
+          paddingVertical: 8,
+          marginBottom: 4,
+        },
+        filterChip: {
+          paddingVertical: 6,
+          paddingHorizontal: 12,
+          borderRadius: 8,
+          backgroundColor: colors.chipBg,
+        },
+        filterChipActive: { backgroundColor: colors.chipBgActive },
+        filterChipText: {
+          fontSize: 13,
+          fontWeight: '500',
+          color: colors.chipText,
+        },
+        filterChipTextActive: { color: colors.chipTextActive },
         expoGoBanner: {
           backgroundColor: colors.warningBg,
           paddingVertical: 10,
@@ -242,9 +275,9 @@ export function ReminderListScreen({
         <Text style={styles.subtitle}>
           {reminders.length === 0
             ? 'No reminders yet'
-            : `${reminders.length} reminder${
-                reminders.length === 1 ? '' : 's'
-              }`}
+            : selectedCategoryId != null
+              ? `${filteredReminders.length} of ${reminders.length} reminder${reminders.length === 1 ? '' : 's'}`
+              : `${reminders.length} reminder${reminders.length === 1 ? '' : 's'}`}
         </Text>
         <View style={styles.headerRow}>
           <TouchableOpacity
@@ -256,6 +289,14 @@ export function ReminderListScreen({
             <Text style={styles.themeDropdownText}>▾</Text>
           </TouchableOpacity>
           <View style={styles.themeRow}>
+            {onCategoriesPress && (
+              <TouchableOpacity
+                style={styles.topLink}
+                onPress={onCategoriesPress}
+              >
+                <Text style={styles.topLinkText}>Categories</Text>
+              </TouchableOpacity>
+            )}
             {onStatsPress && (
               <TouchableOpacity style={styles.topLink} onPress={onStatsPress}>
                 <Text style={styles.topLinkText}>Statistics</Text>
@@ -327,15 +368,61 @@ export function ReminderListScreen({
 
       <SnoozeBar />
 
+      {categories.length > 0 && (
+        <View style={styles.filterRow}>
+          <TouchableOpacity
+            style={[
+              styles.filterChip,
+              selectedCategoryId === null && styles.filterChipActive,
+            ]}
+            onPress={() => setSelectedCategoryId(null)}
+          >
+            <Text
+              style={[
+                styles.filterChipText,
+                selectedCategoryId === null && styles.filterChipTextActive,
+              ]}
+            >
+              All
+            </Text>
+          </TouchableOpacity>
+          {categories.map((cat) => (
+            <TouchableOpacity
+              key={cat.id}
+              style={[
+                styles.filterChip,
+                selectedCategoryId === cat.id && styles.filterChipActive,
+              ]}
+              onPress={() => setSelectedCategoryId(cat.id)}
+            >
+              <Text
+                style={[
+                  styles.filterChipText,
+                  selectedCategoryId === cat.id && styles.filterChipTextActive,
+                ]}
+              >
+                {cat.name}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+      )}
+
       <FlatList
-        data={reminders}
+        data={filteredReminders}
         keyExtractor={(r) => r.id}
         contentContainerStyle={styles.list}
         ListEmptyComponent={
           <View style={styles.empty}>
-            <Text style={styles.emptyText}>Add a reminder to get started</Text>
+            <Text style={styles.emptyText}>
+              {selectedCategoryId != null
+                ? 'No reminders in this category'
+                : 'Add a reminder to get started'}
+            </Text>
             <Text style={styles.emptyHint}>
-              e.g. water, walking, or any habit you want to track
+              {selectedCategoryId != null
+                ? 'Try another category or add a reminder with this category'
+                : 'e.g. water, walking, or any habit you want to track'}
             </Text>
           </View>
         }

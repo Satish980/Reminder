@@ -6,5 +6,6 @@
 export { ReminderListScreen } from './screens/ReminderListScreen';
 export { AddReminderScreen } from './screens/AddReminderScreen';
 export { EditReminderScreen } from './screens/EditReminderScreen';
+export { CategoriesScreen } from './screens/CategoriesScreen';
 export { ReminderCard, CreateReminderForm } from './components';
 export { getScheduleLabel, SCHEDULE_KIND_OPTIONS } from './utils/scheduleLabel';

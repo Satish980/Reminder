@@ -5,7 +5,7 @@ import { Card } from '../../../shared/components';
 import { getScheduleLabel } from '../utils/scheduleLabel';
 import { getRingtoneLabel } from '../utils/ringtoneOptions';
 import { getVibrationLabel } from '../utils/vibrationOptions';
-import { useThemeColors, useStreakStore } from '../../../core/store';
+import { useThemeColors, useStreakStore, useCategoryStore } from '../../../core/store';
 import { computeStreak } from '../../../core/streaks/streakCalc';
 
 interface ReminderCardProps {
@@ -18,7 +18,12 @@ interface ReminderCardProps {
 
 export function ReminderCard({ reminder, onToggle, onMarkDone, onEdit, onDelete }: ReminderCardProps) {
   const colors = useThemeColors();
+  const categories = useCategoryStore((s) => s.categories);
   const completions = useStreakStore((s) => s.completions);
+  const categoryName =
+    reminder.categoryId != null
+      ? categories.find((c) => c.id === reminder.categoryId)?.name
+      : null;
   const streak = useMemo(
     () =>
       computeStreak(
@@ -87,6 +92,7 @@ export function ReminderCard({ reminder, onToggle, onMarkDone, onEdit, onDelete 
           <Text style={styles.title}>{reminder.title}</Text>
           <Text style={styles.subtitle}>
             {scheduleLabel}
+            {categoryName != null ? ` · ${categoryName}` : ''}
             {reminder.ringtone !== 'none' ? ` · ${getRingtoneLabel(reminder.ringtone)}` : ' · Silent'}
             {reminder.vibration && reminder.vibration !== 'default'
               ? ` · ${getVibrationLabel(reminder.vibration)}`

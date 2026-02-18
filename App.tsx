@@ -3,7 +3,7 @@ import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import * as Notifications from 'expo-notifications';
 import { RootNavigator } from './src/app/navigation/RootNavigator';
-import { useThemeStore, useSnoozeStore, useStreakStore } from './src/core/store';
+import { useThemeStore, useSnoozeStore, useStreakStore, useCategoryStore } from './src/core/store';
 import { NOTIFICATION_ACTION_MARK_DONE } from './src/core/constants';
 import { scheduleSnooze, parseSnoozeMinutesFromAction } from './src/services/snooze.service';
 
@@ -15,10 +15,14 @@ import { scheduleSnooze, parseSnoozeMinutesFromAction } from './src/services/sno
 export default function App() {
   const { mode, hydrate } = useThemeStore();
   const setPendingSnooze = useSnoozeStore((s) => s.setPendingSnooze);
+  const hydrateCategories = useCategoryStore((s) => s.hydrate);
 
   useEffect(() => {
     hydrate();
   }, [hydrate]);
+  useEffect(() => {
+    hydrateCategories();
+  }, [hydrateCategories]);
 
   useEffect(() => {
     const sub = Notifications.addNotificationResponseReceivedListener((response) => {

@@ -4,6 +4,7 @@
 
 export const STORAGE_KEYS = {
   REMINDERS: '@Reminder/reminders',
+  CATEGORIES: '@Reminder/categories',
   THEME_MODE: '@Reminder/themeMode',
   COMPLETIONS: '@Reminder/completions',
 } as const;

@@ -34,6 +34,15 @@ export interface WeeklySchedule {
 export type ScheduleConfig = IntervalSchedule | DailySchedule | WeeklySchedule;
 
 /**
+ * User-defined category for grouping reminders. No hardcoded types;
+ * categories are stored and managed at runtime.
+ */
+export interface Category {
+  id: string;
+  name: string;
+}
+
+/**
  * Built-in ringtone options. 'none' = silent; 'default' = system default.
  */
 export type RingtoneId = 'none' | 'default';
@@ -72,6 +81,8 @@ export interface Reminder {
   ringtone: RingtoneValue;
   /** Vibration pattern for notifications. Omit = default. */
   vibration?: VibrationPatternId;
+  /** Category id for grouping and filtering. null = uncategorized. */
+  categoryId: string | null;
   createdAt: number;
 }
 

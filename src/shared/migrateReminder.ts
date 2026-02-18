@@ -11,6 +11,7 @@ type RawReminder = Record<string, unknown> & {
   enabled: boolean;
   ringtone?: string;
   vibration?: string;
+  categoryId?: string | null;
   createdAt: number;
   schedule?: ScheduleConfig;
   intervalType?: 'hourly' | 'daily' | 'custom';
@@ -65,6 +66,8 @@ export function migrateReminder(raw: RawReminder): Reminder {
       : raw.soundEnabled === false
         ? 'none'
         : 'default';
+  const categoryId =
+    raw.categoryId != null && typeof raw.categoryId === 'string' ? raw.categoryId : null;
   return {
     id: raw.id,
     title: String(raw.title),
@@ -72,6 +75,7 @@ export function migrateReminder(raw: RawReminder): Reminder {
     schedule,
     ringtone,
     vibration: normalizeVibration(raw.vibration),
+    categoryId,
     createdAt: Number(raw.createdAt),
   };
 }

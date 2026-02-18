@@ -5,6 +5,7 @@ import {
   ReminderListScreen,
   AddReminderScreen,
   EditReminderScreen,
+  CategoriesScreen,
 } from '../../features/reminders';
 import { StatisticsScreen } from '../../features/statistics';
 import { useThemeStore, useThemeColors } from '../../core/store';
@@ -13,6 +14,7 @@ export type RootStackParamList = {
   ReminderList: undefined;
   AddReminder: undefined;
   EditReminder: { reminderId: string };
+  Categories: undefined;
   Statistics: undefined;
 };
 
@@ -62,6 +64,11 @@ export function RootNavigator() {
           options={{ title: 'Edit reminder' }}
         />
         <Stack.Screen
+          name="Categories"
+          component={CategoriesScreenWrapper}
+          options={{ title: 'Categories' }}
+        />
+        <Stack.Screen
           name="Statistics"
           component={StatisticsScreenWrapper}
           options={{ title: 'Statistics' }}
@@ -80,6 +87,7 @@ function ReminderListScreenWrapper({
     <ReminderListScreen
       onAddPress={() => navigation.navigate('AddReminder')}
       onEditPress={(id) => navigation.navigate('EditReminder', { reminderId: id })}
+      onCategoriesPress={() => navigation.navigate('Categories')}
       onStatsPress={() => navigation.navigate('Statistics')}
     />
   );
@@ -106,6 +114,14 @@ function EditReminderScreenWrapper({
       onDone={() => navigation.goBack()}
     />
   );
+}
+
+function CategoriesScreenWrapper({
+  navigation,
+}: {
+  navigation: { goBack: () => void };
+}) {
+  return <CategoriesScreen onClose={() => navigation.goBack()} />;
 }
 
 function StatisticsScreenWrapper({

@@ -13,8 +13,11 @@ A React Native (Expo) reminder app built with TypeScript. Android-first, iOS-com
 - **Completion tracking**: store completion status per occurrence (id, reminderId, completedAt, optional source, occurrenceDate). Mark done from in-app or from notification action ("Done" button). Schema supports history and analytics; streak logic unchanged.
 - **Streak tracking**: completions drive current/longest streak per reminder (consecutive days). Data model is sync-friendly for future analytics/cloud.
 - **Statistics screen**: completion percentage (days with ≥1 completion in last 7 days), weekly trend chart (completions per day), total completions (all time + this week). Modular **analytics.service** (pure functions) so new metrics can be added without touching UI.
-- **Themes**: light, dark, and monochrome.
+- **Themes**: light, dark, and monochrome; selected via a single dropdown (default theme: dark).
 - **Ringtone**: none, system default, or pick from device files / music library; in-app preview (Play button).
+- **Per-reminder notification alerts**: each reminder can have its own **sound** (none / default; config abstracted for future expansion) and **vibration pattern** (default, strong, double tap, none). Android uses one notification channel per pattern so alerts differ per reminder; snoozed notifications keep the same sound/vibration.
+- **Categories**: group reminders by category (e.g. Health, Fitness, Study). Categories are **user-defined** (no hardcoded types): add, edit, and delete from the **Categories** screen. New reminders can be assigned a category or left uncategorized. **Filter** the list by category (All / category chips). Deleting a category uncategorizes its reminders.
+- **Test notification**: small “Test” control with bell icon in the list header (top right) to fire a sample notification in 3 seconds; only shown when notifications are available (not in Expo Go on Android).
 
 ## Architecture
 
@@ -25,31 +28,35 @@ src/
 ├── app/                    # App shell
 │   └── navigation/         # Root navigator and screens wiring
 ├── core/                   # Shared app core
-│   ├── constants.ts
+│   ├── constants.ts       # Storage keys, notification channels, vibration patterns, defaults
 │   ├── streaks/            # Pure streak calculation (no scheduling)
 │   │   └── streakCalc.ts
-│   └── store/              # Zustand stores (reminders, theme, snooze, streaks)
+│   └── store/              # Zustand stores (reminders, categories, theme, snooze, streaks)
 ├── features/
 │   ├── reminders/          # Reminders feature
-│   │   ├── components/     # ReminderCard, CreateReminderForm
-│   │   ├── screens/        # List, Add, Edit
-│   │   └── utils/          # scheduleLabel, scheduleForm (schedule config)
+│   │   ├── components/     # ReminderCard, CreateReminderForm, RingtonePicker, SnoozeBar
+│   │   ├── screens/        # List, Add, Edit, Categories
+│   │   └── utils/          # scheduleLabel, scheduleForm, ringtoneOptions, vibrationOptions
 │   └── statistics/         # Statistics feature
 │       └── screens/        # StatisticsScreen (completion %, trend chart, totals)
 ├── services/               # Cross-cutting services
-│   ├── analytics.service.ts  # Modular metrics (getTotalCompletions, getWeeklyTrend, getCompletionPercentage, getStatsSnapshot)
-│   ├── storage.service.ts  # AsyncStorage persistence
-│   ├── notification.service.ts  # expo-notifications scheduling
-│   ├── scheduleTriggerBuilder.ts  # ScheduleConfig → notification triggers
-│   └── ringtone.service.ts # Ringtone pick + preview (expo-audio)
+│   ├── analytics.service.ts    # Modular metrics (getTotalCompletions, getWeeklyTrend, etc.)
+│   ├── storage.service.ts      # AsyncStorage persistence
+│   ├── notification.service.ts # expo-notifications scheduling; per-reminder sound/vibration
+│   ├── notificationChannels.ts # Android channels per vibration pattern (no circular deps)
+│   ├── scheduleTriggerBuilder.ts # ScheduleConfig → notification triggers
+│   ├── snooze.service.ts       # One-off snooze scheduling (uses alert config)
+│   └── ringtone.service.ts    # Ringtone pick + preview (expo-audio)
 └── shared/
     ├── components/         # Reusable UI (Button, Card)
-    └── types/              # Shared types (Reminder, intervals)
+    ├── types/              # Shared types (Reminder, Category, ScheduleConfig, Completion, etc.)
+    └── migrateReminder.ts  # Raw storage → Reminder (schedule, ringtone, vibration, categoryId)
 ```
 
-- **State**: Zustand store in `core/store`; persisted via `storage.service`.
-- **Notifications**: Scheduled/cancelled in `notification.service`; store calls it on add/update/remove/toggle.
+- **State**: Zustand store in `core/store` (reminders, categories, theme, snooze, streaks); persisted via `storage.service`.
+- **Notifications**: Scheduled/cancelled in `notification.service`; per-reminder sound and vibration via `NotificationAlertConfig` and Android channels in `notificationChannels.ts`. Snooze uses the same alert config so snoozed notifications match the reminder’s sound/vibration.
 - **No hardcoded schedule types**: Schedules are driven by `ScheduleConfig` (interval / daily / weekly); new kinds can be added in types, trigger builder, and form.
+- **No hardcoded category types**: Categories are stored in `category.store`; seed names (e.g. Health, Fitness, Study) are used only when the list is empty. Filtering and assignment use `categoryId` only.
 
 ## Tech Stack
 
@@ -212,8 +219,9 @@ For a full list of **next steps and feature ideas** (quick wins, medium effort, 
 | **2.1.0** | **Snooze**: when a reminder notification fires, user can snooze for 5 / 10 / 15 / 30 min (configurable in `SNOOZE_DURATIONS_MINUTES`). Snooze schedules only a one-off notification; recurring schedule unchanged. Notification category with Snooze actions (iOS). In-app snooze bar when user opens app by tapping notification (Android fallback). `snooze.service` for scheduling; UI only dispatches. Cancelling a reminder also cancels its snoozed instances. | — |
 | **2.2.0** | **Streak tracking**: completion history stored locally (`Completion`: id, reminderId, completedAt). "Mark done" on each reminder; pure streak calculation in `core/streaks/streakCalc` (current/longest consecutive days). Streak store persists completions; logic kept separate from reminder scheduling. Data model supports future analytics and cloud sync. Deleting a reminder clears its completions. | — |
 | **2.3.0** | **Completion tracking**: `Completion` extended with optional `source` (in_app \| notification) and `occurrenceDate` (YYYY-MM-DD) for history and analytics. **Mark complete from notification**: "Done" action on reminder notifications (iOS); response listener records completion with source `notification`. **Statistics screen**: completion percentage (days with ≥1 completion in last 7), weekly trend bar chart (completions per day), total completions (all time + this week). **Modular analytics.service**: pure functions `getTotalCompletions`, `getWeeklyTrend`, `getCompletionPercentage`, `getStatsSnapshot`; add new metrics by adding functions. Navigation: Statistics screen; "Statistics" link on reminder list. | — |
+| **2.4.0** | **Per-reminder notification sound and vibration**: each reminder has `ringtone` (unchanged) and `vibration` (default \| strong \| double \| none). Sound config abstracted as `NotificationSoundConfig`; alert config as `NotificationAlertConfig` for scheduling. Android: one notification channel per vibration pattern (`notificationChannels.ts`); snooze keeps reminder’s sound/vibration. **Theme**: single dropdown instead of three chips; default theme **dark**. **Test notification**: moved to small "Test" + bell icon in list header (top right). **Categories**: user-defined categories (add/edit/delete on Categories screen); reminders have `categoryId` (null = uncategorized). Filter list by category (All + category chips). Categories seeded with Health, Fitness, Study when empty; no hardcoded category types in logic. | Theme selector: three chips → one dropdown. Test notification: footer button → header link. |
 
-_Current app version in `package.json`: **1.0.0**. Bump when you release (e.g. **2.0.0** schedule config, **2.1.0** snooze, **2.2.0** streaks, **2.3.0** statistics & completion-from-notification)._
+_Current app version in `package.json`: **1.0.0**. Bump when you release (e.g. **2.4.0** categories, per-reminder alerts, theme dropdown, test-in-header)._
 
 ## Troubleshooting
 

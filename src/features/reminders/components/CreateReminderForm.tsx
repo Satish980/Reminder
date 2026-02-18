@@ -9,11 +9,13 @@ import {
   TouchableOpacity,
   KeyboardAvoidingView,
   Platform,
+  Modal,
+  Pressable,
 } from 'react-native';
 import type { RingtoneValue, VibrationPatternId } from '../../../shared/types';
 import { Button } from '../../../shared/components';
 import { DEFAULT_RINGTONE, DEFAULT_VIBRATION } from '../../../core/constants';
-import { useThemeColors } from '../../../core/store';
+import { useThemeColors, useCategoryStore } from '../../../core/store';
 import { RingtonePicker } from './RingtonePicker';
 import { getRingtoneLabel } from '../utils/ringtoneOptions';
 import { VIBRATION_OPTIONS } from '../utils/vibrationOptions';
@@ -29,6 +31,7 @@ import { WEEKDAY_NAMES } from '../utils/scheduleLabel';
 export interface CreateReminderFormValues {
   title: string;
   schedule: ScheduleFormValues;
+  categoryId: string | null;
   ringtone: RingtoneValue;
   vibration: VibrationPatternId;
   enabled: boolean;
@@ -37,6 +40,7 @@ export interface CreateReminderFormValues {
 const defaultValues: CreateReminderFormValues = {
   title: '',
   schedule: defaultScheduleFormValues,
+  categoryId: null,
   ringtone: DEFAULT_RINGTONE,
   vibration: DEFAULT_VIBRATION,
   enabled: true,
@@ -76,12 +80,19 @@ export function CreateReminderForm({
   submitLabel = 'Add reminder',
 }: CreateReminderFormProps) {
   const colors = useThemeColors();
+  const categories = useCategoryStore((s) => s.categories);
   const [values, setValues] = useState<CreateReminderFormValues>({
     ...defaultValues,
     ...initialValues,
   });
   const [submitting, setSubmitting] = useState(false);
+  const [categoryPickerVisible, setCategoryPickerVisible] = useState(false);
   const schedule = values.schedule;
+
+  const categoryLabel =
+    values.categoryId == null
+      ? 'None'
+      : categories.find((c) => c.id === values.categoryId)?.name ?? 'None';
 
   const styles = useMemo(
     () =>
@@ -148,6 +159,30 @@ export function CreateReminderForm({
         switchLabel: { fontSize: 16, color: colors.text },
         buttons: { marginTop: 28, gap: 12 },
         cancelButton: { marginTop: 8 },
+        themeDropdown: {
+          flexDirection: 'row',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+        },
+        themeDropdownText: { fontSize: 15, color: colors.inputText, fontWeight: '500' },
+        modalOverlay: {
+          flex: 1,
+          justifyContent: 'center',
+          alignItems: 'center',
+          backgroundColor: 'rgba(0,0,0,0.4)',
+        },
+        modalContent: {
+          backgroundColor: colors.background,
+          borderRadius: 12,
+          minWidth: 200,
+          paddingVertical: 4,
+        },
+        themeOption: {
+          paddingVertical: 12,
+          paddingHorizontal: 16,
+        },
+        themeOptionText: { fontSize: 15, fontWeight: '500', color: colors.text },
+        themeOptionTextActive: { color: colors.primary },
       }),
     [colors]
   );
@@ -361,6 +396,68 @@ export function CreateReminderForm({
           </>
         )}
 
+        <Text style={styles.label}>Category</Text>
+        <TouchableOpacity
+          style={[styles.input, styles.themeDropdown]}
+          onPress={() => setCategoryPickerVisible(true)}
+          activeOpacity={0.7}
+        >
+          <Text style={styles.themeDropdownText}>{categoryLabel}</Text>
+          <Text style={styles.themeDropdownText}>▾</Text>
+        </TouchableOpacity>
+        <Modal
+          visible={categoryPickerVisible}
+          transparent
+          animationType="fade"
+          onRequestClose={() => setCategoryPickerVisible(false)}
+        >
+          <Pressable
+            style={styles.modalOverlay}
+            onPress={() => setCategoryPickerVisible(false)}
+          >
+            <Pressable
+              style={styles.modalContent}
+              onPress={(e) => e.stopPropagation()}
+            >
+              <TouchableOpacity
+                style={styles.themeOption}
+                onPress={() => {
+                  setValues((prev) => ({ ...prev, categoryId: null }));
+                  setCategoryPickerVisible(false);
+                }}
+              >
+                <Text
+                  style={[
+                    styles.themeOptionText,
+                    values.categoryId === null && styles.themeOptionTextActive,
+                  ]}
+                >
+                  None
+                </Text>
+              </TouchableOpacity>
+              {categories.map((cat) => (
+                <TouchableOpacity
+                  key={cat.id}
+                  style={styles.themeOption}
+                  onPress={() => {
+                    setValues((prev) => ({ ...prev, categoryId: cat.id }));
+                    setCategoryPickerVisible(false);
+                  }}
+                >
+                  <Text
+                    style={[
+                      styles.themeOptionText,
+                      values.categoryId === cat.id && styles.themeOptionTextActive,
+                    ]}
+                  >
+                    {cat.name}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </Pressable>
+          </Pressable>
+        </Modal>
+
         <Text style={styles.label}>Ringtone</Text>
         <Text style={[styles.switchLabel, { marginBottom: 4 }]}>
           Current: {getRingtoneLabel(values.ringtone)}
@@ -432,6 +529,7 @@ export function CreateReminderForm({
 export function reminderToFormValues(reminder: {
   title: string;
   schedule: import('../../../shared/types').ScheduleConfig;
+  categoryId: string | null;
   ringtone: RingtoneValue;
   vibration?: import('../../../shared/types').VibrationPatternId;
   enabled: boolean;
@@ -439,6 +537,7 @@ export function reminderToFormValues(reminder: {
   return {
     title: reminder.title,
     schedule: scheduleToFormValues(reminder.schedule),
+    categoryId: reminder.categoryId ?? null,
     ringtone: reminder.ringtone,
     vibration: reminder.vibration ?? DEFAULT_VIBRATION,
     enabled: reminder.enabled,
@@ -452,6 +551,7 @@ export function formValuesToReminderInput(
   return {
     title: values.title.trim(),
     schedule: formValuesToSchedule(values.schedule),
+    categoryId: values.categoryId,
     ringtone: values.ringtone,
     vibration: values.vibration,
     enabled: values.enabled,
