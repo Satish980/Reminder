@@ -10,10 +10,20 @@
 import Constants, { ExecutionEnvironment } from 'expo-constants';
 import * as Notifications from 'expo-notifications';
 import { Platform } from 'react-native';
-import type { Reminder } from '../shared/types';
-import { NOTIFICATION_CHANNEL_ID, REMINDER_CATEGORY_ID, SNOOZE_DURATIONS_MINUTES, NOTIFICATION_ACTION_MARK_DONE } from '../core/constants';
+import type { Reminder, VibrationPatternId, NotificationAlertConfig } from '../shared/types';
+import {
+  REMINDER_CATEGORY_ID,
+  SNOOZE_DURATIONS_MINUTES,
+  NOTIFICATION_ACTION_MARK_DONE,
+  DEFAULT_VIBRATION,
+} from '../core/constants';
 import { buildTriggerSpecs } from './scheduleTriggerBuilder';
 import { snoozePrefixForReminder } from './snooze.service';
+import {
+  getNotificationChannelId,
+  ensureNotificationChannel,
+  setupAllNotificationChannels,
+} from './notificationChannels';
 
 /** Notifications are disabled in Expo Go (use a development build for reminders). */
 export const isNotificationsUnavailable =
@@ -68,39 +78,42 @@ export async function setupReminderCategory(): Promise<void> {
   }
 }
 
+export { getNotificationChannelId, ensureNotificationChannel } from './notificationChannels';
+
 /**
- * Create Android notification channel (required for sound on Android 8+).
- * Idempotent; safe to call on every launch. No-ops in Expo Go.
+ * Create all Android notification channels (one per vibration pattern).
+ * Idempotent; safe to call on every launch.
  */
 export async function setupNotificationChannel(): Promise<void> {
-  if (isNotificationsUnavailable || Platform.OS !== 'android') return;
-  await Notifications.setNotificationChannelAsync(NOTIFICATION_CHANNEL_ID, {
-    name: 'Reminders',
-    importance: Notifications.AndroidImportance.HIGH,
-    sound: 'default',
-    vibrationPattern: [0, 250, 250, 250],
-  });
+  if (isNotificationsUnavailable) return;
+  await setupAllNotificationChannels();
 }
 
 function notificationIdentifier(reminderId: string, suffix: string): string {
   return suffix === '0' ? reminderId : `${reminderId}#${suffix}`;
 }
 
+/** Build alert config from a reminder for use when scheduling. Abstracted for future expansion. */
+export function getAlertConfigFromReminder(reminder: Reminder): NotificationAlertConfig {
+  return {
+    sound: { ringtone: reminder.ringtone },
+    vibration: reminder.vibration ?? DEFAULT_VIBRATION,
+  };
+}
+
 /**
  * Schedule all notifications for a reminder from its schedule config.
- * One reminder may produce multiple scheduled notifications (e.g. weekly with several weekdays × times).
+ * Uses per-reminder sound and vibration (via alert config).
  */
 export async function scheduleReminder(reminder: Reminder): Promise<void> {
   if (isNotificationsUnavailable || !reminder.enabled) return;
 
+  const alert = getAlertConfigFromReminder(reminder);
   await setupNotificationChannel();
-  const channelId = Platform.OS === 'android' ? NOTIFICATION_CHANNEL_ID : undefined;
+  const channelId = Platform.OS === 'android' ? getNotificationChannelId(alert.vibration) : undefined;
   const specs = buildTriggerSpecs(reminder.schedule, channelId);
 
-  const sound =
-    reminder.ringtone === 'none'
-      ? undefined
-      : 'default';
+  const sound = alert.sound.ringtone === 'none' ? undefined : 'default';
 
   await setupReminderCategory();
 
@@ -160,6 +173,7 @@ const TEST_NOTIFICATION_ID = 'reminder_test_sample';
 export async function scheduleTestNotification(): Promise<void> {
   if (isNotificationsUnavailable) return;
   await setupNotificationChannel();
+  const channelId = Platform.OS === 'android' ? getNotificationChannelId('default') : undefined;
   await Notifications.scheduleNotificationAsync({
     identifier: TEST_NOTIFICATION_ID,
     content: {
@@ -172,7 +186,7 @@ export async function scheduleTestNotification(): Promise<void> {
       type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL,
       seconds: 3,
       repeats: false,
-      channelId: Platform.OS === 'android' ? NOTIFICATION_CHANNEL_ID : undefined,
+      channelId,
     },
   });
 }

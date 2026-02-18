@@ -1,8 +1,9 @@
 import React, { useMemo } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
-import { useSnoozeStore, useThemeColors } from '../../../core/store';
+import { useSnoozeStore, useThemeColors, useReminderStore } from '../../../core/store';
 import { SNOOZE_DURATIONS_MINUTES } from '../../../core/constants';
 import { scheduleSnooze } from '../../../services/snooze.service';
+import { getAlertConfigFromReminder } from '../../../services/notification.service';
 
 /**
  * In-app snooze prompt when user opened the app by tapping a reminder notification
@@ -12,7 +13,15 @@ import { scheduleSnooze } from '../../../services/snooze.service';
 export function SnoozeBar() {
   const pendingSnooze = useSnoozeStore((s) => s.pendingSnooze);
   const clearPendingSnooze = useSnoozeStore((s) => s.clearPendingSnooze);
+  const reminders = useReminderStore((s) => s.reminders);
   const colors = useThemeColors();
+
+  const alertConfig = pendingSnooze
+    ? (() => {
+        const r = reminders.find((x) => x.id === pendingSnooze.reminderId);
+        return r ? getAlertConfigFromReminder(r) : null;
+      })()
+    : null;
 
   const styles = useMemo(
     () =>
@@ -53,7 +62,7 @@ export function SnoozeBar() {
   if (!pendingSnooze) return null;
 
   const handleSnooze = (minutes: number) => {
-    scheduleSnooze(pendingSnooze.reminderId, pendingSnooze.title, minutes);
+    scheduleSnooze(pendingSnooze.reminderId, pendingSnooze.title, minutes, alertConfig ?? undefined);
     clearPendingSnooze();
   };
 

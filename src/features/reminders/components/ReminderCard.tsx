@@ -4,6 +4,7 @@ import type { Reminder } from '../../../shared/types';
 import { Card } from '../../../shared/components';
 import { getScheduleLabel } from '../utils/scheduleLabel';
 import { getRingtoneLabel } from '../utils/ringtoneOptions';
+import { getVibrationLabel } from '../utils/vibrationOptions';
 import { useThemeColors, useStreakStore } from '../../../core/store';
 import { computeStreak } from '../../../core/streaks/streakCalc';
 
@@ -87,6 +88,9 @@ export function ReminderCard({ reminder, onToggle, onMarkDone, onEdit, onDelete 
           <Text style={styles.subtitle}>
             {scheduleLabel}
             {reminder.ringtone !== 'none' ? ` · ${getRingtoneLabel(reminder.ringtone)}` : ' · Silent'}
+            {reminder.vibration && reminder.vibration !== 'default'
+              ? ` · ${getVibrationLabel(reminder.vibration)}`
+              : ''}
           </Text>
           {streakLabel !== null && (
             <Text style={styles.streakText}>{streakLabel}</Text>

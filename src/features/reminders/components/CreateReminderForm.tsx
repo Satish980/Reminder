@@ -10,12 +10,13 @@ import {
   KeyboardAvoidingView,
   Platform,
 } from 'react-native';
-import type { RingtoneValue } from '../../../shared/types';
+import type { RingtoneValue, VibrationPatternId } from '../../../shared/types';
 import { Button } from '../../../shared/components';
-import { DEFAULT_RINGTONE } from '../../../core/constants';
+import { DEFAULT_RINGTONE, DEFAULT_VIBRATION } from '../../../core/constants';
 import { useThemeColors } from '../../../core/store';
 import { RingtonePicker } from './RingtonePicker';
 import { getRingtoneLabel } from '../utils/ringtoneOptions';
+import { VIBRATION_OPTIONS } from '../utils/vibrationOptions';
 import { SCHEDULE_KIND_OPTIONS } from '../utils/scheduleLabel';
 import {
   type ScheduleFormValues,
@@ -29,6 +30,7 @@ export interface CreateReminderFormValues {
   title: string;
   schedule: ScheduleFormValues;
   ringtone: RingtoneValue;
+  vibration: VibrationPatternId;
   enabled: boolean;
 }
 
@@ -36,6 +38,7 @@ const defaultValues: CreateReminderFormValues = {
   title: '',
   schedule: defaultScheduleFormValues,
   ringtone: DEFAULT_RINGTONE,
+  vibration: DEFAULT_VIBRATION,
   enabled: true,
 };
 
@@ -367,6 +370,31 @@ export function CreateReminderForm({
           onChange={(v) => setValues((prev) => ({ ...prev, ringtone: v }))}
         />
 
+        <Text style={styles.label}>Vibration</Text>
+        <View style={styles.row}>
+          {VIBRATION_OPTIONS.map((opt) => (
+            <TouchableOpacity
+              key={opt.id}
+              style={[
+                styles.chip,
+                values.vibration === opt.id && styles.chipActive,
+              ]}
+              onPress={() =>
+                setValues((prev) => ({ ...prev, vibration: opt.id }))
+              }
+            >
+              <Text
+                style={[
+                  styles.chipText,
+                  values.vibration === opt.id && styles.chipTextActive,
+                ]}
+              >
+                {opt.label}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+
         <View style={styles.switchRow}>
           <Text style={styles.switchLabel}>Enable immediately</Text>
           <Switch
@@ -405,12 +433,14 @@ export function reminderToFormValues(reminder: {
   title: string;
   schedule: import('../../../shared/types').ScheduleConfig;
   ringtone: RingtoneValue;
+  vibration?: import('../../../shared/types').VibrationPatternId;
   enabled: boolean;
 }): CreateReminderFormValues {
   return {
     title: reminder.title,
     schedule: scheduleToFormValues(reminder.schedule),
     ringtone: reminder.ringtone,
+    vibration: reminder.vibration ?? DEFAULT_VIBRATION,
     enabled: reminder.enabled,
   };
 }
@@ -423,6 +453,7 @@ export function formValuesToReminderInput(
     title: values.title.trim(),
     schedule: formValuesToSchedule(values.schedule),
     ringtone: values.ringtone,
+    vibration: values.vibration,
     enabled: values.enabled,
   };
 }

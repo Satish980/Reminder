@@ -7,7 +7,9 @@
 import Constants, { ExecutionEnvironment } from 'expo-constants';
 import * as Notifications from 'expo-notifications';
 import { Platform } from 'react-native';
-import { NOTIFICATION_CHANNEL_ID, REMINDER_CATEGORY_ID } from '../core/constants';
+import type { NotificationAlertConfig } from '../shared/types';
+import { REMINDER_CATEGORY_ID } from '../core/constants';
+import { getNotificationChannelId, ensureNotificationChannel } from './notificationChannels';
 
 function isNotificationsUnavailable(): boolean {
   return (
@@ -37,15 +39,25 @@ function snoozeIdentifier(reminderId: string): string {
 
 /**
  * Schedule a one-off reminder notification to fire after `durationMinutes`.
- * Does not affect the reminder's recurring schedule; only this instance is rescheduled.
+ * Uses the reminder's alert config (sound + vibration) when provided.
  * No-op if notifications are unavailable (e.g. Expo Go on Android).
  */
 export async function scheduleSnooze(
   reminderId: string,
   title: string,
-  durationMinutes: number
+  durationMinutes: number,
+  alertConfig?: NotificationAlertConfig | null
 ): Promise<void> {
   if (isNotificationsUnavailable()) return;
+
+  const vibration = alertConfig?.vibration ?? 'default';
+  if (Platform.OS === 'android') {
+    await ensureNotificationChannel(vibration);
+  }
+  const channelId = Platform.OS === 'android' ? getNotificationChannelId(vibration) : undefined;
+
+  const sound =
+    alertConfig?.sound.ringtone === 'none' ? undefined : 'default';
 
   const seconds = Math.max(1, Math.min(60 * 24, durationMinutes * 60)); // clamp 1 min – 24 h
   const identifier = snoozeIdentifier(reminderId);
@@ -55,7 +67,7 @@ export async function scheduleSnooze(
     content: {
       title,
       body: `Time for: ${title}`,
-      sound: 'default',
+      sound,
       data: { reminderId },
       categoryIdentifier: REMINDER_CATEGORY_ID,
     },
@@ -63,7 +75,7 @@ export async function scheduleSnooze(
       type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL,
       seconds,
       repeats: false,
-      channelId: Platform.OS === 'android' ? NOTIFICATION_CHANNEL_ID : undefined,
+      channelId,
     },
   });
 }

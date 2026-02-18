@@ -2,13 +2,15 @@
  * Migrates stored reminders to the current Reminder shape (schedule-based).
  */
 
-import type { Reminder, ScheduleConfig } from './types';
+import type { Reminder, ScheduleConfig, VibrationPatternId } from './types';
+import { DEFAULT_VIBRATION } from '../core/constants';
 
 type RawReminder = Record<string, unknown> & {
   id: string;
   title: string;
   enabled: boolean;
   ringtone?: string;
+  vibration?: string;
   createdAt: number;
   schedule?: ScheduleConfig;
   intervalType?: 'hourly' | 'daily' | 'custom';
@@ -16,6 +18,14 @@ type RawReminder = Record<string, unknown> & {
   dailyTime?: string;
   soundEnabled?: boolean;
 };
+
+const VIBRATION_IDS: VibrationPatternId[] = ['default', 'strong', 'double', 'none'];
+
+function normalizeVibration(v?: string): VibrationPatternId {
+  if (typeof v === 'string' && VIBRATION_IDS.includes(v as VibrationPatternId))
+    return v as VibrationPatternId;
+  return DEFAULT_VIBRATION;
+}
 
 function isScheduleConfig(s: unknown): s is ScheduleConfig {
   if (!s || typeof s !== 'object') return false;
@@ -61,6 +71,7 @@ export function migrateReminder(raw: RawReminder): Reminder {
     enabled: Boolean(raw.enabled),
     schedule,
     ringtone,
+    vibration: normalizeVibration(raw.vibration),
     createdAt: Number(raw.createdAt),
   };
 }

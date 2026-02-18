@@ -45,6 +45,20 @@ export type RingtoneId = 'none' | 'default';
 export type RingtoneValue = RingtoneId | string;
 
 /**
+ * Sound configuration for a notification. Abstracted for future expansion
+ * (e.g. volume, fade-in, custom asset keys).
+ */
+export interface NotificationSoundConfig {
+  /** Which sound to play: 'none' | 'default' | 'custom:<uri>' */
+  ringtone: RingtoneValue;
+}
+
+/**
+ * Built-in vibration pattern ids. Maps to platform-specific patterns (e.g. Android number[]).
+ */
+export type VibrationPatternId = 'default' | 'strong' | 'double' | 'none';
+
+/**
  * Reminder entity. Schedule is configurable via ScheduleConfig (no hardcoded interval types).
  */
 export interface Reminder {
@@ -56,7 +70,18 @@ export interface Reminder {
   schedule: ScheduleConfig;
   /** Which sound to play: 'none' | 'default' | 'custom:<uri>' for device audio */
   ringtone: RingtoneValue;
+  /** Vibration pattern for notifications. Omit = default. */
+  vibration?: VibrationPatternId;
   createdAt: number;
+}
+
+/**
+ * Alert preferences for a notification (sound + vibration). Used when scheduling
+ * so we can extend with more options later without changing call sites.
+ */
+export interface NotificationAlertConfig {
+  sound: NotificationSoundConfig;
+  vibration: VibrationPatternId;
 }
 
 /** Input to create a new reminder (id and createdAt are set by the store). */
