@@ -7,7 +7,7 @@ import {
   ViewStyle,
   TextStyle,
 } from 'react-native';
-import { useThemeColors } from '../../core/store';
+import { useTheme } from '../../core/store';
 
 interface ButtonProps {
   title: string;
@@ -19,6 +19,7 @@ interface ButtonProps {
   textStyle?: TextStyle;
 }
 
+/** Theme-aware button: uses centralized theme (colors + radius + spacing). */
 export function Button({
   title,
   onPress,
@@ -28,14 +29,15 @@ export function Button({
   style,
   textStyle,
 }: ButtonProps) {
-  const colors = useThemeColors();
+  const theme = useTheme();
+  const { colors, radius, spacing } = theme;
   const styles = useMemo(
     () =>
       StyleSheet.create({
         base: {
-          paddingVertical: 12,
-          paddingHorizontal: 20,
-          borderRadius: 10,
+          paddingVertical: spacing.sm,
+          paddingHorizontal: spacing.lg,
+          borderRadius: radius.md,
           alignItems: 'center',
           justifyContent: 'center',
           minHeight: 48,
@@ -55,7 +57,7 @@ export function Button({
         },
         outlineText: { color: colors.primary },
       }),
-    [colors]
+    [colors, radius, spacing]
   );
 
   const isDisabled = disabled || loading;

@@ -1,6 +1,6 @@
 /**
- * Theme color configuration.
- * Single source of truth for app colors — change here for easier debugging and development.
+ * Centralized theme color configuration (light and dark modes).
+ * Single source of truth for app colors. Used by the theme system (core/theme/index.ts).
  *
  * Semantic keys:
  * - background: main screen background

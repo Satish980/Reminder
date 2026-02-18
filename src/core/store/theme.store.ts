@@ -1,10 +1,11 @@
 /**
  * Theme (color mode) state. Persisted to AsyncStorage.
+ * Uses centralized theme config from core/theme.
  */
 
 import { create } from 'zustand';
-import type { ColorMode } from '../theme/colors';
-import { getPalette } from '../theme/colors';
+import type { ColorMode } from '../theme';
+import { getTheme } from '../theme';
 import { STORAGE_KEYS } from '../constants';
 import { storageService } from '../../services/storage.service';
 
@@ -35,8 +36,14 @@ export const useThemeStore = create<ThemeState>((set, get) => ({
   },
 }));
 
-/** Hook: current color palette for the active mode. */
-export function useThemeColors() {
+/** Hook: full theme (colors + spacing + radius) for the active mode. Use for theme-aware components. */
+export function useTheme() {
   const mode = useThemeStore((s) => s.mode);
-  return getPalette(mode);
+  return getTheme(mode);
+}
+
+/** Hook: current color palette only. Prefer useTheme() when you need tokens too. */
+export function useThemeColors() {
+  const theme = useTheme();
+  return theme.colors;
 }

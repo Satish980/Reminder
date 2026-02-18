@@ -31,6 +31,10 @@ src/
 │   ├── constants.ts       # Storage keys, notification channels, vibration patterns, defaults
 │   ├── streaks/            # Pure streak calculation (no scheduling)
 │   │   └── streakCalc.ts
+│   ├── theme/              # Centralized theme (colors, tokens, getTheme, isDarkMode)
+│   │   ├── index.ts        # Single entry: palettes, tokens, getTheme()
+│   │   ├── colors.ts       # Semantic palettes (light, dark, monochrome)
+│   │   └── tokens.ts       # Spacing & radius (mode-independent)
 │   └── store/              # Zustand stores (reminders, categories, theme, snooze, streaks)
 ├── features/
 │   ├── reminders/          # Reminders feature
@@ -53,6 +57,7 @@ src/
     └── migrateReminder.ts  # Raw storage → Reminder (schedule, ringtone, vibration, categoryId)
 ```
 
+- **Theme system**: Centralized in `core/theme`. **Light and dark** (and monochrome) modes with a single semantic color palette per mode (`colors.ts`). Design tokens (spacing, radius) in `tokens.ts` for consistent layout. `getTheme(mode)` returns colors + tokens; `useTheme()` and `useThemeColors()` in store expose the current theme. Components use these hooks so they are **theme-aware and reusable** (no hardcoded colors or layout numbers). Add new tokens or palette keys in one place to scale.
 - **State**: Zustand store in `core/store` (reminders, categories, theme, snooze, streaks); persisted via `storage.service`.
 - **Notifications**: Scheduled/cancelled in `notification.service`; per-reminder sound and vibration via `NotificationAlertConfig` and Android channels in `notificationChannels.ts`. Snooze uses the same alert config so snoozed notifications match the reminder’s sound/vibration.
 - **No hardcoded schedule types**: Schedules are driven by `ScheduleConfig` (interval / daily / weekly); new kinds can be added in types, trigger builder, and form.
