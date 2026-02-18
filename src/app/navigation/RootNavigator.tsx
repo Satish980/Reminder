@@ -8,15 +8,17 @@ import {
   CategoriesScreen,
 } from '../../features/reminders';
 import { StatisticsScreen } from '../../features/statistics';
+import { AnalyticsDashboardScreen } from '../../features/analytics'
 import { useThemeStore, useThemeColors } from '../../core/store';
 
 export type RootStackParamList = {
-  ReminderList: undefined;
-  AddReminder: undefined;
-  EditReminder: { reminderId: string };
-  Categories: undefined;
-  Statistics: undefined;
-};
+  ReminderList: undefined
+  AddReminder: undefined
+  EditReminder: { reminderId: string }
+  Categories: undefined
+  Statistics: undefined
+  Analytics: undefined
+}
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
@@ -73,9 +75,14 @@ export function RootNavigator() {
           component={StatisticsScreenWrapper}
           options={{ title: 'Statistics' }}
         />
+        <Stack.Screen
+          name="Analytics"
+          component={AnalyticsDashboardScreenWrapper}
+          options={{ title: 'Analytics' }}
+        />
       </Stack.Navigator>
     </NavigationContainer>
-  );
+  )
 }
 
 function ReminderListScreenWrapper({
@@ -86,11 +93,14 @@ function ReminderListScreenWrapper({
   return (
     <ReminderListScreen
       onAddPress={() => navigation.navigate('AddReminder')}
-      onEditPress={(id) => navigation.navigate('EditReminder', { reminderId: id })}
+      onEditPress={(id) =>
+        navigation.navigate('EditReminder', { reminderId: id })
+      }
       onCategoriesPress={() => navigation.navigate('Categories')}
       onStatsPress={() => navigation.navigate('Statistics')}
+      onAnalyticsPress={() => navigation.navigate('Analytics')}
     />
-  );
+  )
 }
 
 function AddReminderScreenWrapper({
@@ -130,4 +140,12 @@ function StatisticsScreenWrapper({
   navigation: { goBack: () => void };
 }) {
   return <StatisticsScreen onClose={() => navigation.goBack()} />;
+}
+
+function AnalyticsDashboardScreenWrapper({
+  navigation,
+}: {
+  navigation: { goBack: () => void }
+}) {
+  return <AnalyticsDashboardScreen onClose={() => navigation.goBack()} />
 }

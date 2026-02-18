@@ -33,6 +33,7 @@ export interface ReminderListScreenProps {
   onEditPress: (id: string) => void
   onStatsPress?: () => void
   onCategoriesPress?: () => void
+  onAnalyticsPress?: () => void
 }
 
 const MODE_LABELS: Record<ColorMode, string> = {
@@ -46,6 +47,7 @@ export function ReminderListScreen({
   onEditPress,
   onStatsPress,
   onCategoriesPress,
+  onAnalyticsPress,
 }: ReminderListScreenProps) {
   const { reminders, hydrated, hydrate, setEnabled, removeReminder } =
     useReminderStore()
@@ -295,6 +297,11 @@ export function ReminderListScreen({
                 onPress={onCategoriesPress}
               >
                 <Text style={styles.topLinkText}>Categories</Text>
+              </TouchableOpacity>
+            )}
+            {onAnalyticsPress && (
+              <TouchableOpacity style={styles.topLink} onPress={onAnalyticsPress}>
+                <Text style={styles.topLinkText}>Analytics</Text>
               </TouchableOpacity>
             )}
             {onStatsPress && (

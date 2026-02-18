@@ -111,3 +111,36 @@ export function getStatsSnapshot(completions: Completion[]): StatsSnapshot {
     weeklyTrend: getWeeklyTrend(completions, 7),
   };
 }
+
+/**
+ * Completion distribution by category. Read-only: takes history (completions) and
+ * lookup maps derived from current reminders/categories. No hardcoded category ids.
+ */
+export interface CategoryDistributionSegment {
+  categoryId: string | null;
+  categoryName: string;
+  count: number;
+}
+
+export function getCompletionDistributionByCategory(
+  completions: Completion[],
+  reminderIdToCategoryId: Map<string, string | null>,
+  categoryIdToName: Map<string, string>,
+  uncategorizedLabel: string = 'Uncategorized'
+): CategoryDistributionSegment[] {
+  const countByCategoryId = new Map<string | null, number>();
+
+  for (const c of completions) {
+    const categoryId = reminderIdToCategoryId.get(c.reminderId) ?? null;
+    countByCategoryId.set(categoryId, (countByCategoryId.get(categoryId) ?? 0) + 1);
+  }
+
+  const segments: CategoryDistributionSegment[] = [];
+  for (const [categoryId, count] of countByCategoryId) {
+    const categoryName =
+      categoryId == null ? uncategorizedLabel : categoryIdToName.get(categoryId) ?? uncategorizedLabel;
+    segments.push({ categoryId, categoryName, count });
+  }
+  segments.sort((a, b) => b.count - a.count);
+  return segments;
+}
