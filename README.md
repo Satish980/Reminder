@@ -12,6 +12,7 @@ A React Native (Expo) reminder app built with TypeScript. Android-first, iOS-com
 - **Snooze**: when a notification fires, snooze for 5 / 10 / 15 / 30 min (one-off only; future reminders unchanged). Snooze from notification actions (iOS) or in-app bar when opening from a tap (Android).
 - **Completion tracking**: store completion status per occurrence (id, reminderId, completedAt, optional source, occurrenceDate). Mark done from in-app or from notification action ("Done" button). Schema supports history and analytics; streak logic unchanged.
 - **Streak tracking**: completions drive current/longest streak per reminder (consecutive days). Data model is sync-friendly for future analytics/cloud.
+- **Statistics screen**: completion percentage (days with ≥1 completion in last 7 days), weekly trend chart (completions per day), total completions (all time + this week). Modular **analytics.service** (pure functions) so new metrics can be added without touching UI.
 - **Themes**: light, dark, and monochrome.
 - **Ringtone**: none, system default, or pick from device files / music library; in-app preview (Play button).
 
@@ -29,11 +30,14 @@ src/
 │   │   └── streakCalc.ts
 │   └── store/              # Zustand stores (reminders, theme, snooze, streaks)
 ├── features/
-│   └── reminders/          # Reminders feature
-│       ├── components/     # ReminderCard, CreateReminderForm
-│       ├── screens/        # List, Add, Edit
-│       └── utils/           # scheduleLabel, scheduleForm (schedule config)
+│   ├── reminders/          # Reminders feature
+│   │   ├── components/     # ReminderCard, CreateReminderForm
+│   │   ├── screens/        # List, Add, Edit
+│   │   └── utils/          # scheduleLabel, scheduleForm (schedule config)
+│   └── statistics/         # Statistics feature
+│       └── screens/        # StatisticsScreen (completion %, trend chart, totals)
 ├── services/               # Cross-cutting services
+│   ├── analytics.service.ts  # Modular metrics (getTotalCompletions, getWeeklyTrend, getCompletionPercentage, getStatsSnapshot)
 │   ├── storage.service.ts  # AsyncStorage persistence
 │   ├── notification.service.ts  # expo-notifications scheduling
 │   ├── scheduleTriggerBuilder.ts  # ScheduleConfig → notification triggers
@@ -207,8 +211,9 @@ For a full list of **next steps and feature ideas** (quick wins, medium effort, 
 | **2.0.0** | **Schedule config**: no hardcoded interval types. **Custom intervals**: every X minutes or hours. **Daily**: multiple time slots per day (e.g. 09:00, 14:00). **Weekly**: choose weekdays (Sun–Sat) + multiple time slots. Configurable scheduler: one reminder can create multiple notifications (e.g. weekly = one per weekday×time). Migration from old `intervalType`/`dailyTime`/`customIntervalMinutes` to `schedule`. `scheduleTriggerBuilder` + cancel by identifier prefix for multi-slot reminders. | **Reminder shape**: `intervalType`, `customIntervalMinutes`, `dailyTime` replaced by single `schedule: ScheduleConfig`. **intervalLabel** replaced by **scheduleLabel** / **getScheduleLabel**. |
 | **2.1.0** | **Snooze**: when a reminder notification fires, user can snooze for 5 / 10 / 15 / 30 min (configurable in `SNOOZE_DURATIONS_MINUTES`). Snooze schedules only a one-off notification; recurring schedule unchanged. Notification category with Snooze actions (iOS). In-app snooze bar when user opens app by tapping notification (Android fallback). `snooze.service` for scheduling; UI only dispatches. Cancelling a reminder also cancels its snoozed instances. | — |
 | **2.2.0** | **Streak tracking**: completion history stored locally (`Completion`: id, reminderId, completedAt). "Mark done" on each reminder; pure streak calculation in `core/streaks/streakCalc` (current/longest consecutive days). Streak store persists completions; logic kept separate from reminder scheduling. Data model supports future analytics and cloud sync. Deleting a reminder clears its completions. | — |
+| **2.3.0** | **Completion tracking**: `Completion` extended with optional `source` (in_app \| notification) and `occurrenceDate` (YYYY-MM-DD) for history and analytics. **Mark complete from notification**: "Done" action on reminder notifications (iOS); response listener records completion with source `notification`. **Statistics screen**: completion percentage (days with ≥1 completion in last 7), weekly trend bar chart (completions per day), total completions (all time + this week). **Modular analytics.service**: pure functions `getTotalCompletions`, `getWeeklyTrend`, `getCompletionPercentage`, `getStatsSnapshot`; add new metrics by adding functions. Navigation: Statistics screen; "Statistics" link on reminder list. | — |
 
-_Current app version in `package.json`: **1.0.0**. Bump when you release (e.g. **2.0.0** for schedule config, **2.1.0** for snooze, **2.2.0** for streaks)._
+_Current app version in `package.json`: **1.0.0**. Bump when you release (e.g. **2.0.0** schedule config, **2.1.0** snooze, **2.2.0** streaks, **2.3.0** statistics & completion-from-notification)._
 
 ## Troubleshooting
 

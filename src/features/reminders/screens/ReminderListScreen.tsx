@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo } from 'react';
+import React, { useEffect, useMemo, useState } from 'react'
 import {
   View,
   Text,
@@ -6,37 +6,52 @@ import {
   StyleSheet,
   Alert,
   TouchableOpacity,
-} from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { useReminderStore, useThemeStore, useThemeColors, useStreakStore } from '../../../core/store';
-import type { ColorMode } from '../../../core/theme';
-import { ReminderCard } from '../components/ReminderCard';
-import { SnoozeBar } from '../components/SnoozeBar';
-import { Button } from '../../../shared/components';
+  Modal,
+  Pressable,
+} from 'react-native'
+import { SafeAreaView } from 'react-native-safe-area-context'
+import {
+  useReminderStore,
+  useThemeStore,
+  useThemeColors,
+  useStreakStore,
+} from '../../../core/store'
+import type { ColorMode } from '../../../core/theme'
+import { ReminderCard } from '../components/ReminderCard'
+import { SnoozeBar } from '../components/SnoozeBar'
+import { Button } from '../../../shared/components'
+import Ionicons from '@expo/vector-icons/Ionicons'
 import {
   isNotificationsUnavailable,
   requestNotificationPermissions,
   scheduleTestNotification,
-} from '../../../services/notification.service';
+} from '../../../services/notification.service'
 
-interface ReminderListScreenProps {
-  onAddPress: () => void;
-  onEditPress: (id: string) => void;
+export interface ReminderListScreenProps {
+  onAddPress: () => void
+  onEditPress: (id: string) => void
+  onStatsPress?: () => void
 }
 
 const MODE_LABELS: Record<ColorMode, string> = {
   light: 'Light',
   dark: 'Dark',
-  monochrome: 'Mono',
-};
+  monochrome: 'Monochrome',
+}
 
-export function ReminderListScreen({ onAddPress, onEditPress }: ReminderListScreenProps) {
+export function ReminderListScreen({
+  onAddPress,
+  onEditPress,
+  onStatsPress,
+}: ReminderListScreenProps) {
   const { reminders, hydrated, hydrate, setEnabled, removeReminder } =
-    useReminderStore();
-  const { mode, setMode } = useThemeStore();
-  const addCompletion = useStreakStore((s) => s.addCompletion);
-  const clearCompletionsForReminder = useStreakStore((s) => s.clearCompletionsForReminder);
-  const colors = useThemeColors();
+    useReminderStore()
+  const { mode, setMode } = useThemeStore()
+  const addCompletion = useStreakStore((s) => s.addCompletion)
+  const clearCompletionsForReminder = useStreakStore(
+    (s) => s.clearCompletionsForReminder
+  )
+  const colors = useThemeColors()
 
   const styles = useMemo(
     () =>
@@ -64,27 +79,69 @@ export function ReminderListScreen({ onAddPress, onEditPress }: ReminderListScre
           color: colors.textSecondary,
           marginTop: 4,
         },
-        themeRow: {
+        headerRow: {
           flexDirection: 'row',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          flexWrap: 'wrap',
           marginTop: 12,
           gap: 8,
         },
-        themeChip: {
+        themeRow: {
+          flexDirection: 'row',
+          gap: 8,
+        },
+        topLink: {
+          paddingVertical: 6,
+          paddingHorizontal: 12,
+        },
+        topLinkText: {
+          fontSize: 15,
+          fontWeight: '500',
+          color: colors.primary,
+        },
+        topLinkRow: {
+          flexDirection: 'row',
+          alignItems: 'center',
+          gap: 4,
+        },
+        themeDropdown: {
           paddingVertical: 6,
           paddingHorizontal: 12,
           borderRadius: 8,
           backgroundColor: colors.chipBg,
+          flexDirection: 'row',
+          alignItems: 'center',
+          gap: 4,
         },
-        themeChipActive: {
-          backgroundColor: colors.chipBgActive,
-        },
-        themeChipText: {
+        themeDropdownText: {
           fontSize: 13,
           fontWeight: '500',
           color: colors.chipText,
         },
-        themeChipTextActive: {
-          color: colors.chipTextActive,
+        modalOverlay: {
+          flex: 1,
+          justifyContent: 'center',
+          alignItems: 'center',
+          backgroundColor: 'rgba(0,0,0,0.4)',
+        },
+        modalContent: {
+          backgroundColor: colors.background,
+          borderRadius: 12,
+          minWidth: 160,
+          paddingVertical: 4,
+        },
+        themeOption: {
+          paddingVertical: 12,
+          paddingHorizontal: 16,
+        },
+        themeOptionText: {
+          fontSize: 15,
+          fontWeight: '500',
+          color: colors.text,
+        },
+        themeOptionTextActive: {
+          color: colors.primary,
         },
         expoGoBanner: {
           backgroundColor: colors.warningBg,
@@ -122,33 +179,35 @@ export function ReminderListScreen({ onAddPress, onEditPress }: ReminderListScre
           padding: 16,
           paddingBottom: 32,
           backgroundColor: colors.background,
-          gap: 10,
         },
-        testButton: { marginTop: 4 },
       }),
     [colors]
-  );
+  )
 
-  const streakHydrate = useStreakStore((s) => s.hydrate);
+  const streakHydrate = useStreakStore((s) => s.hydrate)
+  const [themePickerVisible, setThemePickerVisible] = useState(false)
 
   useEffect(() => {
-    hydrate();
-    streakHydrate();
-  }, [hydrate, streakHydrate]);
+    hydrate()
+    streakHydrate()
+  }, [hydrate, streakHydrate])
 
   const handleTestNotification = async () => {
-    const granted = await requestNotificationPermissions();
+    const granted = await requestNotificationPermissions()
     if (!granted) {
       Alert.alert(
         'Permission needed',
         'Allow notifications in Settings to test.',
         [{ text: 'OK' }]
-      );
-      return;
+      )
+      return
     }
-    await scheduleTestNotification();
-    Alert.alert('Test scheduled', 'A sample notification will appear in 3 seconds.');
-  };
+    await scheduleTestNotification()
+    Alert.alert(
+      'Test scheduled',
+      'A sample notification will appear in 3 seconds.'
+    )
+  }
 
   const handleDelete = (id: string) => {
     Alert.alert(
@@ -160,20 +219,20 @@ export function ReminderListScreen({ onAddPress, onEditPress }: ReminderListScre
           text: 'Delete',
           style: 'destructive',
           onPress: async () => {
-            await clearCompletionsForReminder(id);
-            await removeReminder(id);
+            await clearCompletionsForReminder(id)
+            await removeReminder(id)
           },
         },
       ]
-    );
-  };
+    )
+  }
 
   if (!hydrated) {
     return (
       <SafeAreaView style={styles.centered} edges={['top']}>
         <Text style={styles.loadingText}>Loading…</Text>
       </SafeAreaView>
-    );
+    )
   }
 
   return (
@@ -183,27 +242,80 @@ export function ReminderListScreen({ onAddPress, onEditPress }: ReminderListScre
         <Text style={styles.subtitle}>
           {reminders.length === 0
             ? 'No reminders yet'
-            : `${reminders.length} reminder${reminders.length === 1 ? '' : 's'}`}
+            : `${reminders.length} reminder${
+                reminders.length === 1 ? '' : 's'
+              }`}
         </Text>
-        <View style={styles.themeRow}>
-          {(['light', 'dark', 'monochrome'] as const).map((m) => (
-            <TouchableOpacity
-              key={m}
-              style={[styles.themeChip, mode === m && styles.themeChipActive]}
-              onPress={() => setMode(m)}
-            >
-              <Text
-                style={[
-                  styles.themeChipText,
-                  mode === m && styles.themeChipTextActive,
-                ]}
+        <View style={styles.headerRow}>
+          <TouchableOpacity
+            style={styles.themeDropdown}
+            onPress={() => setThemePickerVisible(true)}
+            activeOpacity={0.7}
+          >
+            <Text style={styles.themeDropdownText}>{MODE_LABELS[mode]}</Text>
+            <Text style={styles.themeDropdownText}>▾</Text>
+          </TouchableOpacity>
+          <View style={styles.themeRow}>
+            {onStatsPress && (
+              <TouchableOpacity style={styles.topLink} onPress={onStatsPress}>
+                <Text style={styles.topLinkText}>Statistics</Text>
+              </TouchableOpacity>
+            )}
+            {!isNotificationsUnavailable && (
+              <TouchableOpacity
+                style={styles.topLink}
+                onPress={handleTestNotification}
               >
-                {MODE_LABELS[m]}
-              </Text>
-            </TouchableOpacity>
-          ))}
+                <View style={styles.topLinkRow}>
+                  <Text style={styles.topLinkText}>Test</Text>
+                  <Ionicons
+                    name="notifications"
+                    size={16}
+                    color={colors.primary}
+                  />
+                </View>
+              </TouchableOpacity>
+            )}
+          </View>
         </View>
       </View>
+
+      <Modal
+        visible={themePickerVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setThemePickerVisible(false)}
+      >
+        <Pressable
+          style={styles.modalOverlay}
+          onPress={() => setThemePickerVisible(false)}
+        >
+          <Pressable
+            style={styles.modalContent}
+            onPress={(e) => e.stopPropagation()}
+          >
+            {(['light', 'dark', 'monochrome'] as const).map((m) => (
+              <TouchableOpacity
+                key={m}
+                style={styles.themeOption}
+                onPress={() => {
+                  setMode(m)
+                  setThemePickerVisible(false)
+                }}
+              >
+                <Text
+                  style={[
+                    styles.themeOptionText,
+                    mode === m && styles.themeOptionTextActive,
+                  ]}
+                >
+                  {MODE_LABELS[m]}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </Pressable>
+        </Pressable>
+      </Modal>
 
       {isNotificationsUnavailable && (
         <View style={styles.expoGoBanner}>
@@ -242,15 +354,7 @@ export function ReminderListScreen({ onAddPress, onEditPress }: ReminderListScre
 
       <View style={styles.footer}>
         <Button title="Add reminder" onPress={onAddPress} />
-        {!isNotificationsUnavailable && (
-          <Button
-            title="Test notification"
-            onPress={handleTestNotification}
-            variant="outline"
-            style={styles.testButton}
-          />
-        )}
       </View>
     </SafeAreaView>
-  );
+  )
 }

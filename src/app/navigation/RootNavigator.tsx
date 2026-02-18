@@ -6,12 +6,14 @@ import {
   AddReminderScreen,
   EditReminderScreen,
 } from '../../features/reminders';
+import { StatisticsScreen } from '../../features/statistics';
 import { useThemeStore, useThemeColors } from '../../core/store';
 
 export type RootStackParamList = {
   ReminderList: undefined;
   AddReminder: undefined;
   EditReminder: { reminderId: string };
+  Statistics: undefined;
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -59,6 +61,11 @@ export function RootNavigator() {
           component={EditReminderScreenWrapper}
           options={{ title: 'Edit reminder' }}
         />
+        <Stack.Screen
+          name="Statistics"
+          component={StatisticsScreenWrapper}
+          options={{ title: 'Statistics' }}
+        />
       </Stack.Navigator>
     </NavigationContainer>
   );
@@ -73,6 +80,7 @@ function ReminderListScreenWrapper({
     <ReminderListScreen
       onAddPress={() => navigation.navigate('AddReminder')}
       onEditPress={(id) => navigation.navigate('EditReminder', { reminderId: id })}
+      onStatsPress={() => navigation.navigate('Statistics')}
     />
   );
 }
@@ -98,4 +106,12 @@ function EditReminderScreenWrapper({
       onDone={() => navigation.goBack()}
     />
   );
+}
+
+function StatisticsScreenWrapper({
+  navigation,
+}: {
+  navigation: { goBack: () => void };
+}) {
+  return <StatisticsScreen onClose={() => navigation.goBack()} />;
 }

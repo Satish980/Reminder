@@ -8,7 +8,7 @@ import { getPalette } from '../theme/colors';
 import { STORAGE_KEYS } from '../constants';
 import { storageService } from '../../services/storage.service';
 
-const DEFAULT_MODE: ColorMode = 'light';
+const DEFAULT_MODE: ColorMode = 'dark';
 
 export interface ThemeState {
   mode: ColorMode;
